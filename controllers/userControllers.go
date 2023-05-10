@@ -61,5 +61,16 @@ func NewUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "Last insert Id " + strconv.Itoa(int(lastId))})
+	c.JSON(200, gin.H{"message": "ID entered " + strconv.Itoa(int(lastId))})
+}
+
+func GetUserByID(c *gin.Context) {
+
+	userId, errConvert := strconv.Atoi(c.Param("userid"))
+	if errConvert != nil {
+		messageError := errConvert.Error()
+		c.JSON(http.StatusBadRequest, gin.H{"message": messageError})
+		return
+	}
+
 }
