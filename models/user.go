@@ -1,15 +1,24 @@
 package models
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"strings"
 )
 
 type User struct {
 	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Username string `json:"user"`
-	Password string `json:"password"`
+	Name     string `json:"name" binding:"required,min=4,max=80"`
+	Username string `json:"user" binding:"required,min=2,max=30"`
+	Password string `json:"password" binding:"required,min=8"`
+}
+
+func (user *User) EncriptPassword() {
+	hash := md5.New()
+	defer hash.Reset()
+	hash.Write([]byte(user.Password))
+	user.Password = hex.EncodeToString(hash.Sum(nil))
 }
 
 func (user *User) ValidAndFormat() error {

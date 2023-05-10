@@ -7,4 +7,5 @@ import (
 
 func InitUserRoutes(r *gin.RouterGroup) {
 	r.GET("/users", controllers.GetUsers)
+	r.POST("/users", controllers.NewUser)
 }

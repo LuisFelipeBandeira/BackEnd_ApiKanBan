@@ -10,8 +10,10 @@ type Card struct {
 	Board      string `json:"board"`
 	Desc       string `json:"desc"`
 	CreatedBy  string `json:"createdby"`
+	CreatedAt  string `json:"createdat"`
 	FinishedBy string `json:"finishedby"`
 	Finished   int    `json:"finished"`
+	FinishedAt string `json:"finishedat"`
 }
 
 func (card *Card) ValidAndFormat() error {
