@@ -92,3 +92,31 @@ func GetUserByID(c *gin.Context) {
 
 	c.JSON(200, user)
 }
+
+func DeleteUser(c *gin.Context) {
+
+	userId, errConvert := strconv.Atoi(c.Param("userid"))
+	if errConvert != nil {
+		messageError := errConvert.Error()
+		c.JSON(400, gin.H{"message": messageError})
+		return
+	}
+
+	result, err := repositories.DeleteUserRepository(userId)
+	if err != nil {
+		messageError := err.Error()
+		c.JSON(http.StatusInternalServerError, gin.H{"message": messageError})
+		return
+	}
+
+	intAffectedRows, errGetQtdAffectedRows := result.RowsAffected()
+	if errGetQtdAffectedRows != nil {
+		messageError := errGetQtdAffectedRows.Error()
+		c.JSON(http.StatusInternalServerError, gin.H{"message": messageError})
+		return
+	}
+
+	StringaffectedRows := strconv.Itoa(int(intAffectedRows))
+
+	c.JSON(200, gin.H{"affectedRows": StringaffectedRows})
+}

@@ -68,3 +68,31 @@ func NewUserRepository(user *models.User) (sql.Result, error) {
 
 	return result, nil
 }
+
+func DeleteUserRepository(id int) (sql.Result, error) {
+	db, errConnectDb := configuration.ConnectDb()
+	if errConnectDb != nil {
+		return nil, errConnectDb
+	}
+
+	var count int
+
+	db.QueryRow("SELECT COUNT(*) FROM Users WHERE Id = ?", id).Scan(&count)
+	if count < 1 {
+		return nil, errors.New("nenhum usuario encontrado com o ID informado")
+	}
+
+	statement, errPrepare := db.Prepare("delete from users where Id = ?;")
+	if errPrepare != nil {
+		return nil, errPrepare
+	}
+
+	defer statement.Close()
+
+	result, errExec := statement.Exec(id)
+	if errExec != nil {
+		return nil, errExec
+	}
+
+	return result, nil
+}

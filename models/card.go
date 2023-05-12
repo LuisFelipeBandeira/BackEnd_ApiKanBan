@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Adicionar motivo, CNPJ, id cliente, nome fantasia
 type Card struct {
 	ID         int    `json:"id"`
 	Board      string `json:"board"`
