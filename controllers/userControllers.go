@@ -73,4 +73,22 @@ func GetUserByID(c *gin.Context) {
 		return
 	}
 
+	var user *models.User
+
+	sqlRow, err := repositories.GetUserByIDRepository(userId)
+	if err != nil {
+		messageError := err.Error()
+		c.JSON(http.StatusInternalServerError, gin.H{"message": messageError})
+		return
+	}
+
+	if errScan := sqlRow.Scan(&user); errScan != nil {
+		messageError := errScan.Error()
+		c.JSON(http.StatusInternalServerError, gin.H{"message": messageError})
+		return
+	}
+
+	user.EncriptPassword()
+
+	c.JSON(200, user)
 }

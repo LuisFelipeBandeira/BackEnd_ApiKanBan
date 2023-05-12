@@ -23,7 +23,7 @@ func GetUsersRepository() (*sql.Rows, error) {
 	return result, nil
 }
 
-func GetUserByIDRepository(id string) (*sql.Row, error) {
+func GetUserByIDRepository(id int) (*sql.Row, error) {
 	db, errConnectDb := configuration.ConnectDb()
 	if errConnectDb != nil {
 		return nil, errConnectDb
@@ -36,9 +36,9 @@ func GetUserByIDRepository(id string) (*sql.Row, error) {
 		return nil, errors.New("nenhum usuario encontrado com o ID informado")
 	}
 
-	sqlRow := db.QueryRow("select * from users")
+	sqlRow := db.QueryRow("select * from users where id = ?", id)
 
-	return result, nil
+	return sqlRow, nil
 }
 
 func NewUserRepository(user *models.User) (sql.Result, error) {
