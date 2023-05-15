@@ -120,3 +120,7 @@ func DeleteUser(c *gin.Context) {
 
 	c.JSON(200, gin.H{"affectedRows": StringaffectedRows})
 }
+
+func UpdateUser(c *gin.Context) {
+
+}

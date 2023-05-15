@@ -96,3 +96,7 @@ func DeleteUserRepository(id int) (sql.Result, error) {
 
 	return result, nil
 }
+
+// func UpdateUserRepository(id int) (sql.Result, error) {
+
+// }
