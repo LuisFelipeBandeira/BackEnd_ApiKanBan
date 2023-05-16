@@ -15,6 +15,10 @@ func GetUsersRepository() (*sql.Rows, error) {
 		return nil, errConnectDb
 	}
 
+	if errPing := db.Ping(); errPing != nil {
+		return nil, errPing
+	}
+
 	result, errSelect := db.Query("select * from users")
 	if errSelect != nil {
 		return nil, errSelect
@@ -27,6 +31,10 @@ func GetUserByIDRepository(id int) (*sql.Row, error) {
 	db, errConnectDb := configuration.ConnectDb()
 	if errConnectDb != nil {
 		return nil, errConnectDb
+	}
+
+	if errPing := db.Ping(); errPing != nil {
+		return nil, errPing
 	}
 
 	var count int
@@ -45,6 +53,10 @@ func NewUserRepository(user *models.User) (sql.Result, error) {
 	db, errConnectDb := configuration.ConnectDb()
 	if errConnectDb != nil {
 		return nil, errConnectDb
+	}
+
+	if errPing := db.Ping(); errPing != nil {
+		return nil, errPing
 	}
 
 	var count int
@@ -75,6 +87,10 @@ func DeleteUserRepository(id int) (sql.Result, error) {
 		return nil, errConnectDb
 	}
 
+	if errPing := db.Ping(); errPing != nil {
+		return nil, errPing
+	}
+
 	var count int
 
 	db.QueryRow("SELECT COUNT(*) FROM Users WHERE Id = ?", id).Scan(&count)
@@ -97,6 +113,66 @@ func DeleteUserRepository(id int) (sql.Result, error) {
 	return result, nil
 }
 
-// func UpdateUserRepository(id int) (sql.Result, error) {
+func UpdateUserRepository(id int, user *models.User) error {
+	db, errConnectDb := configuration.ConnectDb()
+	if errConnectDb != nil {
+		return errConnectDb
+	}
 
-// }
+	if errPing := db.Ping(); errPing != nil {
+		return errPing
+	}
+
+	var countResult int
+
+	db.QueryRow("SELECT Count(*) FROM Users WHERE Id = ?", id).Scan(&countResult)
+	if countResult < 1 {
+		return errors.New("usuario nao encontrato")
+	}
+
+	if user.Name != "" {
+		statement, errPrepare := db.Prepare("update Users set name = ? where id = ?")
+		if errPrepare != nil {
+			return errPrepare
+		}
+
+		defer statement.Close()
+
+		_, errExec := statement.Exec(user.Name, id)
+		if errExec != nil {
+			return errExec
+		}
+	}
+
+	if user.Password != "" {
+		statement, errPrepare := db.Prepare("update Users set password = ? where id = ?")
+		if errPrepare != nil {
+			return errPrepare
+		}
+
+		defer statement.Close()
+
+		user.EncriptPassword()
+
+		_, errExec := statement.Exec(user.Password, id)
+		if errExec != nil {
+			return errExec
+		}
+	}
+
+	if user.Username != "" {
+		statement, errPrepare := db.Prepare("update Users set username = ? where id = ?")
+		if errPrepare != nil {
+			return errPrepare
+		}
+
+		defer statement.Close()
+
+		_, errExec := statement.Exec(user.Username, id)
+		if errExec != nil {
+			return errExec
+		}
+	}
+
+	return nil
+}

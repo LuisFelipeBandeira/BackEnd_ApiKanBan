@@ -122,5 +122,26 @@ func DeleteUser(c *gin.Context) {
 }
 
 func UpdateUser(c *gin.Context) {
+	userId, errToConvert := strconv.Atoi(c.Param("userid"))
+	if errToConvert != nil {
+		messageError := errToConvert.Error()
+		c.JSON(http.StatusBadRequest, gin.H{"message": messageError})
+		return
+	}
 
+	var user *models.User
+
+	if errToGetBody := c.ShouldBindJSON(&user); errToGetBody != nil {
+		messageError := errToGetBody.Error()
+		c.JSON(http.StatusBadRequest, gin.H{"message": messageError})
+		return
+	}
+
+	if err := repositories.UpdateUserRepository(userId, user); err != nil {
+		messageError := err.Error()
+		c.JSON(http.StatusBadRequest, gin.H{"message": messageError})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "usuario atualizado"})
 }
