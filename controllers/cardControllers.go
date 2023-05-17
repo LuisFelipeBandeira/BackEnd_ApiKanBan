@@ -56,3 +56,18 @@ func GetCardById(c *gin.Context) {
 
 	c.JSON(200, card)
 }
+
+func DeleteCard(c *gin.Context) {
+	cardId, errConvert := strconv.Atoi(c.Param("cardid"))
+	if errConvert != nil {
+		c.JSON(400, gin.H{"message": "error converting given id"})
+		return
+	}
+
+	if err := repositories.DeleteCardRepository(cardId); err != nil {
+		c.JSON(500, gin.H{"message": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "User deleted successfully"})
+}
