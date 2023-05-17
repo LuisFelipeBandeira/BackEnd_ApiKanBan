@@ -19,6 +19,8 @@ func GetUsersRepository() (*sql.Rows, error) {
 		return nil, errPing
 	}
 
+	defer db.Close()
+
 	result, errSelect := db.Query("select * from users")
 	if errSelect != nil {
 		return nil, errSelect
@@ -36,6 +38,8 @@ func GetUserByIDRepository(id int) (*sql.Row, error) {
 	if errPing := db.Ping(); errPing != nil {
 		return nil, errPing
 	}
+
+	defer db.Close()
 
 	var count int
 
@@ -58,6 +62,8 @@ func NewUserRepository(user *models.User) (sql.Result, error) {
 	if errPing := db.Ping(); errPing != nil {
 		return nil, errPing
 	}
+
+	defer db.Close()
 
 	var count int
 
@@ -91,6 +97,8 @@ func DeleteUserRepository(id int) (sql.Result, error) {
 		return nil, errPing
 	}
 
+	defer db.Close()
+
 	var count int
 
 	db.QueryRow("SELECT COUNT(*) FROM Users WHERE Id = ?", id).Scan(&count)
@@ -122,6 +130,8 @@ func UpdateUserRepository(id int, user *models.User) error {
 	if errPing := db.Ping(); errPing != nil {
 		return errPing
 	}
+
+	defer db.Close()
 
 	var countResult int
 

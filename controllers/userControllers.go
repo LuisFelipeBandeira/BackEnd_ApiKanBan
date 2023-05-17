@@ -22,7 +22,7 @@ func GetUsers(c *gin.Context) {
 	var users []models.User
 
 	for result.Next() {
-		var user models.User
+		var user *models.User
 
 		if errScan := result.Scan(&user.ID, &user.Name, &user.Username, &user.Password); errScan != nil {
 			messageError := errScan.Error()
@@ -30,7 +30,7 @@ func GetUsers(c *gin.Context) {
 			return
 		}
 
-		users = append(users, user)
+		users = append(users, *user)
 	}
 
 	c.JSON(200, users)
