@@ -145,3 +145,14 @@ func UpdateUser(c *gin.Context) {
 
 	c.JSON(200, gin.H{"message": "usuario atualizado"})
 }
+
+func Login(c *gin.Context) {
+	var userLogin *models.LoginUser
+
+	if errLogin := repositories.LoginRepository(userLogin); errLogin != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"message": errLogin.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "User loged"})
+}

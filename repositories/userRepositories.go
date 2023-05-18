@@ -15,10 +15,6 @@ func GetUsersRepository() (*sql.Rows, error) {
 		return nil, errConnectDb
 	}
 
-	if errPing := db.Ping(); errPing != nil {
-		return nil, errPing
-	}
-
 	defer db.Close()
 
 	result, errSelect := db.Query("select * from users")
@@ -33,10 +29,6 @@ func GetUserByIDRepository(id int) (*sql.Row, error) {
 	db, errConnectDb := configuration.ConnectDb()
 	if errConnectDb != nil {
 		return nil, errConnectDb
-	}
-
-	if errPing := db.Ping(); errPing != nil {
-		return nil, errPing
 	}
 
 	defer db.Close()
@@ -57,10 +49,6 @@ func NewUserRepository(user *models.User) (sql.Result, error) {
 	db, errConnectDb := configuration.ConnectDb()
 	if errConnectDb != nil {
 		return nil, errConnectDb
-	}
-
-	if errPing := db.Ping(); errPing != nil {
-		return nil, errPing
 	}
 
 	defer db.Close()
@@ -93,10 +81,6 @@ func DeleteUserRepository(id int) (sql.Result, error) {
 		return nil, errConnectDb
 	}
 
-	if errPing := db.Ping(); errPing != nil {
-		return nil, errPing
-	}
-
 	defer db.Close()
 
 	var count int
@@ -125,10 +109,6 @@ func UpdateUserRepository(id int, user *models.User) error {
 	db, errConnectDb := configuration.ConnectDb()
 	if errConnectDb != nil {
 		return errConnectDb
-	}
-
-	if errPing := db.Ping(); errPing != nil {
-		return errPing
 	}
 
 	defer db.Close()
@@ -182,6 +162,33 @@ func UpdateUserRepository(id int, user *models.User) error {
 		if errExec != nil {
 			return errExec
 		}
+	}
+
+	return nil
+}
+
+func LoginRepository(userLogin *models.LoginUser) error {
+	db, errConnect := configuration.ConnectDb()
+	if errConnect != nil {
+		return errConnect
+	}
+
+	var resultCount int
+
+	db.QueryRow("select Count(*) from Users where username = ?", userLogin.Username).Scan(&resultCount)
+
+	if resultCount < 1 {
+		return errors.New("nenhum usuario encontrado com o username informado")
+	}
+
+	var passwordDb string
+
+	db.QueryRow("select password from Users where username = ?", userLogin.Username).Scan(&passwordDb)
+
+	userLogin.EncriptPassword()
+
+	if userLogin.Password != passwordDb {
+		return errors.New("incorrect password")
 	}
 
 	return nil

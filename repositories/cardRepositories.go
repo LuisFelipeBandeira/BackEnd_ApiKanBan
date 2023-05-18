@@ -14,10 +14,6 @@ func GetCardsRepository() (*sql.Rows, error) {
 		return nil, errConnect
 	}
 
-	if errPing := db.Ping(); errPing != nil {
-		return nil, errPing
-	}
-
 	defer db.Close()
 
 	rows, errQuery := db.Query("select * from cards")
@@ -32,10 +28,6 @@ func GetCardByIdRepository(id int) (*sql.Row, error) {
 	db, errConnect := configuration.ConnectDb()
 	if errConnect != nil {
 		return nil, errConnect
-	}
-
-	if errPing := db.Ping(); errPing != nil {
-		return nil, errPing
 	}
 
 	defer db.Close()
@@ -57,10 +49,6 @@ func DeleteCardRepository(id int) error {
 	db, errConnect := configuration.ConnectDb()
 	if errConnect != nil {
 		return errConnect
-	}
-
-	if errPing := db.Ping(); errPing != nil {
-		return errPing
 	}
 
 	defer db.Close()
