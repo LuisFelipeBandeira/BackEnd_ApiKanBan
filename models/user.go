@@ -15,7 +15,6 @@ type User struct {
 }
 
 type UpdateUser struct {
-	ID       int    `json:"id"`
 	Name     string `json:"name"`
 	Username string `json:"user"`
 	Password string `json:"password"`
