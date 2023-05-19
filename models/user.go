@@ -14,12 +14,26 @@ type User struct {
 	Password string `json:"password" binding:"required,min=8"`
 }
 
+type UpdateUser struct {
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	Username string `json:"user"`
+	Password string `json:"password"`
+}
+
 type LoginUser struct {
 	Username string `json:"user" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
 func (user *User) EncriptPassword() {
+	hash := md5.New()
+	defer hash.Reset()
+	hash.Write([]byte(user.Password))
+	user.Password = hex.EncodeToString(hash.Sum(nil))
+}
+
+func (user *UpdateUser) EncriptPassword() {
 	hash := md5.New()
 	defer hash.Reset()
 	hash.Write([]byte(user.Password))

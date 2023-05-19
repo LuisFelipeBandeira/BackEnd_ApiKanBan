@@ -105,7 +105,7 @@ func DeleteUserRepository(id int) (sql.Result, error) {
 	return result, nil
 }
 
-func UpdateUserRepository(id int, user *models.User) error {
+func UpdateUserRepository(id int, user models.UpdateUser) error {
 	db, errConnectDb := configuration.ConnectDb()
 	if errConnectDb != nil {
 		return errConnectDb
@@ -167,7 +167,7 @@ func UpdateUserRepository(id int, user *models.User) error {
 	return nil
 }
 
-func LoginRepository(userLogin *models.LoginUser) error {
+func LoginRepository(userLogin models.LoginUser) error {
 	db, errConnect := configuration.ConnectDb()
 	if errConnect != nil {
 		return errConnect

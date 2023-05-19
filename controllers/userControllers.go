@@ -22,7 +22,7 @@ func GetUsers(c *gin.Context) {
 	var users []models.User
 
 	for result.Next() {
-		var user *models.User
+		var user models.User
 
 		if errScan := result.Scan(&user.ID, &user.Name, &user.Username, &user.Password); errScan != nil {
 			messageError := errScan.Error()
@@ -30,7 +30,7 @@ func GetUsers(c *gin.Context) {
 			return
 		}
 
-		users = append(users, *user)
+		users = append(users, user)
 	}
 
 	c.JSON(200, users)
@@ -73,7 +73,7 @@ func GetUserByID(c *gin.Context) {
 		return
 	}
 
-	var user *models.User
+	var user models.User
 
 	sqlRow, err := repositories.GetUserByIDRepository(userId)
 	if err != nil {
@@ -82,7 +82,7 @@ func GetUserByID(c *gin.Context) {
 		return
 	}
 
-	if errScan := sqlRow.Scan(&user); errScan != nil {
+	if errScan := sqlRow.Scan(&user.ID, &user.Name, &user.Username, &user.Password); errScan != nil {
 		messageError := errScan.Error()
 		c.JSON(http.StatusInternalServerError, gin.H{"message": messageError})
 		return
@@ -129,7 +129,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	var user *models.User
+	var user models.UpdateUser
 
 	if errToGetBody := c.ShouldBindJSON(&user); errToGetBody != nil {
 		messageError := errToGetBody.Error()
@@ -147,10 +147,15 @@ func UpdateUser(c *gin.Context) {
 }
 
 func Login(c *gin.Context) {
-	var userLogin *models.LoginUser
+	var userLogin models.LoginUser
+
+	if err := c.ShouldBindJSON(&userLogin); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
 
 	if errLogin := repositories.LoginRepository(userLogin); errLogin != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"message": errLogin.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": errLogin.Error()})
 		return
 	}
 
