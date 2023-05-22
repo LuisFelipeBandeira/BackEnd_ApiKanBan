@@ -6,6 +6,7 @@ import (
 
 	"github.com/LuisFelipeBandeira/BackEnd_ApiKanBan/models"
 	"github.com/LuisFelipeBandeira/BackEnd_ApiKanBan/repositories"
+	"github.com/LuisFelipeBandeira/BackEnd_ApiKanBan/services"
 	"github.com/gin-gonic/gin"
 )
 
@@ -154,10 +155,17 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if errLogin := repositories.LoginRepository(userLogin); errLogin != nil {
+	userId, errLogin := repositories.LoginRepository(userLogin)
+	if errLogin != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": errLogin.Error()})
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "User loged"})
+	token, errToCreateToken := services.CreateToken(userId)
+	if errToCreateToken != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errLogin.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "User loged", "token": token})
 }

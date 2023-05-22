@@ -167,10 +167,10 @@ func UpdateUserRepository(id int, user models.UpdateUser) error {
 	return nil
 }
 
-func LoginRepository(userLogin models.LoginUser) error {
+func LoginRepository(userLogin models.LoginUser) (int, error) {
 	db, errConnect := configuration.ConnectDb()
 	if errConnect != nil {
-		return errConnect
+		return 0, errConnect
 	}
 
 	var resultCount int
@@ -178,18 +178,19 @@ func LoginRepository(userLogin models.LoginUser) error {
 	db.QueryRow("select Count(*) from Users where username = ?", userLogin.Username).Scan(&resultCount)
 
 	if resultCount < 1 {
-		return errors.New("nenhum usuario encontrado com o username informado")
+		return 0, errors.New("nenhum usuario encontrado com o username informado")
 	}
 
 	var passwordDb string
+	var userId int
 
-	db.QueryRow("select password from Users where username = ?", userLogin.Username).Scan(&passwordDb)
+	db.QueryRow("select id, password from Users where username = ?", userLogin.Username).Scan(&userId, &passwordDb)
 
 	userLogin.EncriptPassword()
 
 	if userLogin.Password != passwordDb {
-		return errors.New("incorrect password")
+		return 0, errors.New("incorrect password")
 	}
 
-	return nil
+	return userId, nil
 }
