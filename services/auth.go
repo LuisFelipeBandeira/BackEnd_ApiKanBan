@@ -28,19 +28,34 @@ func CreateToken(userId int) (string, error) {
 }
 
 func ValidateToken(token string) bool {
+	_, err := jwt.Parse(token, ReturnSecretKey)
+
+	return err == nil
+}
+
+func ReturnSecretKey(t *jwt.Token) (interface{}, error) {
+
 	if err := godotenv.Load(); err != nil {
-		return false
+		return nil, err
 	}
 
 	secretKey := os.Getenv("SECRET_KEY")
 
-	_, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
-		if _, isValid := t.Method.(*jwt.SigningMethodHMAC); !isValid {
-			return nil, fmt.Errorf("invalid token: %v", token)
-		}
+	if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+		return nil, fmt.Errorf("Método de assinatura inexperado: %v", t.Header["alg"])
+	}
 
-		return []byte(secretKey), nil
-	})
+	return secretKey, nil
+}
 
-	return err == nil
+func GetUserIdByToken(t string) (int, error) {
+	token, err := jwt.Parse(t, ReturnSecretKey)
+	if err != nil {
+		return 0, err
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		userId := claims["userid"]
+
+	}
 }
