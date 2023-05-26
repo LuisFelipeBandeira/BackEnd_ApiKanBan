@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -27,10 +28,17 @@ func CreateToken(userId int) (string, error) {
 	return token.SignedString([]byte(secretKey))
 }
 
-func ValidateToken(token string) bool {
-	_, err := jwt.Parse(token, ReturnSecretKey)
+func ValidateToken(t string) error {
+	token, err := jwt.Parse(t, ReturnSecretKey)
+	if err != nil {
+		return err
+	}
 
-	return err == nil
+	if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return nil
+	}
+
+	return errors.New("Inválid token!")
 }
 
 func ReturnSecretKey(t *jwt.Token) (interface{}, error) {
@@ -48,14 +56,15 @@ func ReturnSecretKey(t *jwt.Token) (interface{}, error) {
 	return secretKey, nil
 }
 
-func GetUserIdByToken(t string) (int, error) {
+func GetUserIdByToken(t string) (interface{}, error) {
 	token, err := jwt.Parse(t, ReturnSecretKey)
 	if err != nil {
 		return 0, err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		userId := claims["userid"]
-
+		userId := strconv.ParseInt(claims["userid"], 10, 64)
+		fmt.Println(userId)
 	}
+
 }

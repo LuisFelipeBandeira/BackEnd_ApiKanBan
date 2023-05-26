@@ -21,7 +21,7 @@ func Auth() gin.HandlerFunc {
 
 		token := header[len(Bearer_schema):]
 
-		if !services.ValidateToken(token) {
+		if err := services.ValidateToken(token); err != nil {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
 	}
