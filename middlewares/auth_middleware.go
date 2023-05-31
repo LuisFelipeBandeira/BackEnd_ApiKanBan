@@ -24,5 +24,6 @@ func Auth() gin.HandlerFunc {
 		if err := services.ValidateToken(token); err != nil {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
+		c.Next()
 	}
 }

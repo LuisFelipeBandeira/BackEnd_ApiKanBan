@@ -12,12 +12,12 @@ import (
 )
 
 func CreateToken(userId int) (string, error) {
-	permission := jwt.MapClaims{}
-	permission["authorized"] = true
-	permission["exp"] = time.Now().Add(time.Hour * 3).Unix()
-	permission["userid"] = userId
+	claims := jwt.MapClaims{}
+	claims["authorized"] = true
+	claims["exp"] = time.Now().Add(time.Hour * 3).Unix()
+	claims["userid"] = userId
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, permission)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	if err := godotenv.Load(); err != nil {
 		return "", errors.New("error to load .env")
@@ -56,15 +56,20 @@ func ReturnSecretKey(t *jwt.Token) (interface{}, error) {
 	return secretKey, nil
 }
 
-func GetUserIdByToken(t string) (interface{}, error) {
+func GetUserIdByToken(t string) (int, error) {
 	token, err := jwt.Parse(t, ReturnSecretKey)
 	if err != nil {
 		return 0, err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		userId := strconv.ParseInt(claims["userid"], 10, 64)
-		fmt.Println(userId)
+		userId, err := strconv.ParseUint(fmt.Sprintf("%.d", claims["user_id"]), 10, 64)
+		if err != nil {
+			return 0, err
+		}
+
+		return int(userId), nil
 	}
 
+	return 0, errors.New("Error to get token userId")
 }
