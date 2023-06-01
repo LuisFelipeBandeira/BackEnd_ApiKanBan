@@ -92,5 +92,6 @@ func NewCardRepository(card models.Card) (models.Card, error) {
 
 	defer statement.Close()
 
-	errExec := statement.Exec(card.Board, card.Desc, card.CreatedBy, "NOW()")
+	_, errExec := statement.Exec(card.Board, card.Desc, card.CreatedBy, "NOW()")
+
 }
