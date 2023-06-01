@@ -3,9 +3,11 @@ package controllers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/LuisFelipeBandeira/BackEnd_ApiKanBan/models"
 	"github.com/LuisFelipeBandeira/BackEnd_ApiKanBan/repositories"
+	"github.com/LuisFelipeBandeira/BackEnd_ApiKanBan/services"
 	"github.com/gin-gonic/gin"
 )
 
@@ -70,4 +72,44 @@ func DeleteCard(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"message": "User deleted successfully"})
+}
+
+func NewCard(c *gin.Context) {
+	var card models.Card
+
+	if errGetUser := c.ShouldBindJSON(&card); errGetUser != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Card submitted is invalid"})
+		return
+	}
+
+	header := c.GetHeader("Authorization")
+	if header == "" {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	token := strings.Split(header, " ")[1]
+
+	userId, errGetUserId := services.GetUserIdByToken(token)
+	if errGetUserId != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errGetUserId.Error()})
+		return
+	}
+
+	sqlRow, err := repositories.GetUserByIDRepository(userId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+
+	var user models.User
+
+	if errScan := sqlRow.Scan(&user); errScan != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errScan.Error()})
+		return
+	}
+
+	card.CreatedBy = user.Username
+	card.Finished = 0
+
 }

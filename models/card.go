@@ -17,6 +17,16 @@ type Card struct {
 	FinishedAt string `json:"finishedat"`
 }
 
+type UpdateCard struct {
+	Desc       string `json:"desc"`
+	Board      string `json:"board"`
+	CreatedBy  string `json:"createdby"`
+	CreatedAt  string `json:"createdat"`
+	FinishedBy string `json:"finishedby"`
+	Finished   int    `json:"finished"`
+	FinishedAt string `json:"finishedat"`
+}
+
 func (card *Card) ValidAndFormat() error {
 	switch {
 	case card.Board == "":

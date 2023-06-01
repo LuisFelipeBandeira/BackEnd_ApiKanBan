@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/LuisFelipeBandeira/BackEnd_ApiKanBan/services"
 	"github.com/gin-gonic/gin"
@@ -13,13 +14,12 @@ func Auth() gin.HandlerFunc {
 			return
 		}
 
-		const Bearer_schema = "Bearer "
 		header := c.GetHeader("Authorization")
 		if header == "" {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
 
-		token := header[len(Bearer_schema):]
+		token := strings.Split(header, " ")[1]
 
 		if err := services.ValidateToken(token); err != nil {
 			c.AbortWithStatus(http.StatusUnauthorized)

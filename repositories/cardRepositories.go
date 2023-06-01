@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/LuisFelipeBandeira/BackEnd_ApiKanBan/configuration"
+	"github.com/LuisFelipeBandeira/BackEnd_ApiKanBan/models"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -74,4 +75,22 @@ func DeleteCardRepository(id int) error {
 	}
 
 	return nil
+}
+
+func NewCardRepository(card models.Card) (models.Card, error) {
+	db, err := configuration.ConnectDb()
+	if err != nil {
+		return models.Card{}, err
+	}
+
+	defer db.Close()
+
+	statement, errPrepare := db.Prepare("INSERT INTO Cards(board, desc, createdby, createdat) VALUES (?, ?, ?, ?)")
+	if errPrepare != nil {
+		return models.Card{}, nil
+	}
+
+	defer statement.Close()
+
+	errExec := statement.Exec(card.Board, card.Desc, card.CreatedBy, "NOW()")
 }
