@@ -82,6 +82,11 @@ func NewCard(c *gin.Context) {
 		return
 	}
 
+	if errFormat := card.ValidAndFormat(); errFormat != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": errFormat.Error()})
+		return
+	}
+
 	header := c.GetHeader("Authorization")
 	if header == "" {
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -96,9 +101,9 @@ func NewCard(c *gin.Context) {
 		return
 	}
 
-	sqlRow, err := repositories.GetUserByIDRepository(userId)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+	sqlRow, errGetUserLogged := repositories.GetUserByIDRepository(userId)
+	if errGetUserLogged != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errGetUserLogged.Error()})
 		return
 	}
 
@@ -110,6 +115,50 @@ func NewCard(c *gin.Context) {
 	}
 
 	card.CreatedBy = user.Username
-	card.Finished = 0
+
+	cardCadastrado, err := repositories.NewCardRepository(card)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+	}
+
+	c.JSON(200, cardCadastrado)
+}
+
+func FinishCard(c *gin.Context) {
+	cardId, errConvert := strconv.Atoi(c.Param("cardid"))
+	if errConvert != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "userId enviado não pode ser convertido para int"})
+		return
+	}
+
+	token := strings.Split(c.GetHeader("Authorization"), " ")[1]
+
+	userId, errGetUserIdByToken := services.GetUserIdByToken(token)
+	if errGetUserIdByToken != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errGetUserIdByToken.Error()})
+		return
+	}
+
+	var user models.User
+
+	sqlRow, errGetUser := repositories.GetUserByIDRepository(userId)
+	if errGetUser != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errGetUser.Error()})
+		return
+	}
+
+	if errScan := sqlRow.Scan(&user.ID, &user.Name, &user.Username, &user.Password); errScan != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errScan.Error()})
+		return
+	}
+
+	if err := repositories.FinishCardRepository(cardId, user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+	}
+
+	c.JSON(200, gin.H{"message": "the card was finished sucessfully"})
+}
+
+func UpdateCard(c *gin.Context) {
 
 }

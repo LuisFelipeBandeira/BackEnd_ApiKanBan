@@ -93,5 +93,32 @@ func NewCardRepository(card models.Card) (models.Card, error) {
 	defer statement.Close()
 
 	_, errExec := statement.Exec(card.Board, card.Desc, card.CreatedBy, "NOW()")
+	if errExec != nil {
+		return models.Card{}, errExec
+	}
 
+	return card, nil
+}
+
+func FinishCardRepository(cardId int, user models.User) error {
+	db, errConnectDatabase := configuration.ConnectDb()
+	if errConnectDatabase != nil {
+		return errConnectDatabase
+	}
+
+	defer db.Close()
+
+	statement, errPrepare := db.Prepare("Update Users SET finishedby = ?, finished = ?, finishedat = ? WHERE Id = ?")
+	if errPrepare != nil {
+		return errPrepare
+	}
+
+	defer statement.Close()
+
+	_, errExec := statement.Exec(user.Username, 1, "NOW()", cardId)
+	if errExec != nil {
+		return errExec
+	}
+
+	return nil
 }
