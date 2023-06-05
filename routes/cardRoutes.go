@@ -6,9 +6,9 @@ import (
 )
 
 func InitCardRoutes(r *gin.RouterGroup) {
-	r.GET("cards", controllers.GetCards)
-	r.GET("cards/:cardid", controllers.GetCardById)
-	r.DELETE("cards/:cardid", controllers.DeleteCard)
-	r.POST("cards", controllers.NewCard)
-	r.PUT("cards/finish/:cardid", controllers.FinishCard)
+	r.GET("/cards", controllers.GetCards)
+	r.GET("/cards/:cardid", controllers.GetCardById)
+	r.DELETE("/cards/:cardid", controllers.DeleteCard)
+	r.POST("/cards", controllers.NewCard)
+	r.PUT("/cards/finish/:cardid", controllers.FinishCard)
 }

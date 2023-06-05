@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/LuisFelipeBandeira/BackEnd_ApiKanBan/models"
 	"github.com/LuisFelipeBandeira/BackEnd_ApiKanBan/repositories"
@@ -37,6 +38,7 @@ func GetCards(c *gin.Context) {
 }
 
 func GetCardById(c *gin.Context) {
+
 	cardId, errConvert := strconv.Atoi(c.Param("cardid"))
 	if errConvert != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "nao foi possivel converter o id informado"})
@@ -109,16 +111,19 @@ func NewCard(c *gin.Context) {
 
 	var user models.User
 
-	if errScan := sqlRow.Scan(&user); errScan != nil {
+	if errScan := sqlRow.Scan(&user.ID, &user.Name, &user.Username, &user.Password); errScan != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": errScan.Error()})
 		return
 	}
 
 	card.CreatedBy = user.Username
 
+	card.CreatedAt = time.Now()
+
 	cardCadastrado, err := repositories.NewCardRepository(card)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
 	}
 
 	c.JSON(200, cardCadastrado)

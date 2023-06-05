@@ -22,6 +22,7 @@ func Auth() gin.HandlerFunc {
 		token := strings.Split(header, " ")[1]
 
 		if err := services.ValidateToken(token); err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
 		c.Next()

@@ -85,14 +85,14 @@ func NewCardRepository(card models.Card) (models.Card, error) {
 
 	defer db.Close()
 
-	statement, errPrepare := db.Prepare("INSERT INTO Cards(board, desc, createdby, createdat) VALUES (?, ?, ?, ?)")
+	statement, errPrepare := db.Prepare("INSERT INTO Cards(Pipeline, Description, CreatedBy, CreatedAt) VALUES (?, ?, ?, ?)")
 	if errPrepare != nil {
-		return models.Card{}, nil
+		return models.Card{}, errPrepare
 	}
 
 	defer statement.Close()
 
-	_, errExec := statement.Exec(card.Board, card.Desc, card.CreatedBy, "NOW()")
+	_, errExec := statement.Exec(card.Board, card.Desc, card.CreatedBy, card.CreatedAt)
 	if errExec != nil {
 		return models.Card{}, errExec
 	}

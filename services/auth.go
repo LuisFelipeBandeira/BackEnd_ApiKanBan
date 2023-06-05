@@ -29,16 +29,16 @@ func CreateToken(userId int) (string, error) {
 }
 
 func ValidateToken(t string) error {
-	token, err := jwt.Parse(t, ReturnSecretKey)
-	if err != nil {
-		return err
+	token, errParse := jwt.Parse(t, ReturnSecretKey)
+	if errParse != nil {
+		return errParse
 	}
 
 	if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		return nil
 	}
 
-	return errors.New("Inválid token!")
+	return errors.New("invalid token!")
 }
 
 func ReturnSecretKey(t *jwt.Token) (interface{}, error) {
@@ -50,10 +50,10 @@ func ReturnSecretKey(t *jwt.Token) (interface{}, error) {
 	secretKey := os.Getenv("SECRET_KEY")
 
 	if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-		return nil, fmt.Errorf("Método de assinatura inexperado: %v", t.Header["alg"])
+		return nil, fmt.Errorf("metodo de assinatura inexperado: %v", t.Header["alg"])
 	}
 
-	return secretKey, nil
+	return []byte(secretKey), nil
 }
 
 func GetUserIdByToken(t string) (int, error) {
@@ -63,9 +63,9 @@ func GetUserIdByToken(t string) (int, error) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		userId, err := strconv.ParseUint(fmt.Sprintf("%.d", claims["user_id"]), 10, 64)
-		if err != nil {
-			return 0, err
+		userId, errParseInt := strconv.ParseInt(fmt.Sprintf("%v", claims["userid"]), 10, 64)
+		if errParseInt != nil {
+			return 0, errParseInt
 		}
 
 		return int(userId), nil

@@ -3,19 +3,20 @@ package models
 import (
 	"errors"
 	"strings"
+	"time"
 )
 
 // Adicionar motivo, CNPJ, id cliente, nome fantasia
 type Card struct {
-	ID          int    `json:"id"`
-	Board       string `json:"board"`
-	Desc        string `json:"desc"`
-	CreatedBy   string `json:"createdby"`
-	CreatedAt   string `json:"createdat"`
-	TicketOwner string `json:"ticketowner"`
-	FinishedBy  string `json:"finishedby"`
-	Finished    int    `json:"finished"`
-	FinishedAt  string `json:"finishedat"`
+	ID          int       `json:"id"`
+	Board       string    `json:"board"`
+	Desc        string    `json:"desc"`
+	CreatedBy   string    `json:"createdby"`
+	CreatedAt   time.Time `json:"createdat"`
+	TicketOwner string    `json:"ticketowner"`
+	FinishedBy  string    `json:"finishedby"`
+	Finished    int       `json:"finished"`
+	FinishedAt  time.Time `json:"finishedat"`
 }
 
 type UpdateCard struct {
