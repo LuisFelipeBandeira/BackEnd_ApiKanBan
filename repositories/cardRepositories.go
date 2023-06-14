@@ -38,7 +38,7 @@ func GetCardByIdRepository(id int) (*sql.Row, error) {
 	db.QueryRow("Select Count(*) FROM Cards WHERE Id = ?", id).Scan(&count)
 
 	if count < 1 {
-		return nil, errors.New("user not found")
+		return nil, errors.New("card not found")
 	}
 
 	sqlRow := db.QueryRow("select * from cards where id = ?", id)
@@ -118,6 +118,59 @@ func FinishCardRepository(cardId int, user models.User) error {
 	_, errExec := statement.Exec(user.Username, 1, "NOW()", cardId)
 	if errExec != nil {
 		return errExec
+	}
+
+	return nil
+}
+
+func UpdateCardRepository(id int, cardFieldsToUpdate models.UpdateCard) error {
+	db, errConnectDb := configuration.ConnectDb()
+	if errConnectDb != nil {
+		return errConnectDb
+	}
+
+	defer db.Close()
+
+	if cardFieldsToUpdate.Board != "" {
+		statement, errPrepare := db.Prepare("update Cards set Pipeline = ? where id = ?")
+		if errPrepare != nil {
+			return errPrepare
+		}
+
+		defer statement.Close()
+
+		_, errExec := statement.Exec(cardFieldsToUpdate.Board, id)
+		if errExec != nil {
+			return errExec
+		}
+	}
+
+	if cardFieldsToUpdate.Desc != "" {
+		statement, errPrepare := db.Prepare("update Cards set Description = ? where id = ?")
+		if errPrepare != nil {
+			return errPrepare
+		}
+
+		defer statement.Close()
+
+		_, errExec := statement.Exec(cardFieldsToUpdate.Desc, id)
+		if errExec != nil {
+			return errExec
+		}
+	}
+
+	if cardFieldsToUpdate.TicketOwner != "" {
+		statement, errPrepare := db.Prepare("update Cards set TicketOwner = ? where id = ?")
+		if errPrepare != nil {
+			return errPrepare
+		}
+
+		defer statement.Close()
+
+		_, errExec := statement.Exec(cardFieldsToUpdate.TicketOwner, id)
+		if errExec != nil {
+			return errExec
+		}
 	}
 
 	return nil

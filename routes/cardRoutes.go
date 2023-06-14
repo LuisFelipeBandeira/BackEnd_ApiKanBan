@@ -11,4 +11,5 @@ func InitCardRoutes(r *gin.RouterGroup) {
 	r.DELETE("/cards/:cardid", controllers.DeleteCard)
 	r.POST("/cards", controllers.NewCard)
 	r.PUT("/cards/finish/:cardid", controllers.FinishCard)
+	r.PUT("/cards/:cardid", controllers.UpdateCard)
 }

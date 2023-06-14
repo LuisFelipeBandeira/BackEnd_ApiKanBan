@@ -41,7 +41,7 @@ func GetCardById(c *gin.Context) {
 
 	cardId, errConvert := strconv.Atoi(c.Param("cardid"))
 	if errConvert != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "nao foi possivel converter o id informado"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "cardid enviado não pode ser convertido para int"})
 		return
 	}
 
@@ -132,7 +132,7 @@ func NewCard(c *gin.Context) {
 func FinishCard(c *gin.Context) {
 	cardId, errConvert := strconv.Atoi(c.Param("cardid"))
 	if errConvert != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "userId enviado não pode ser convertido para int"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "cardid enviado não pode ser convertido para int"})
 		return
 	}
 
@@ -165,5 +165,27 @@ func FinishCard(c *gin.Context) {
 }
 
 func UpdateCard(c *gin.Context) {
+	cardId, errConvert := strconv.Atoi(c.Param("cardid"))
+	if errConvert != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "cardid enviado não pode ser convertido para int"})
+		return
+	}
 
+	if _, errGetCardById := repositories.GetCardByIdRepository(cardId); errGetCardById != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": errGetCardById.Error()})
+		return
+	}
+
+	var CardFieldsToUpdate models.UpdateCard
+
+	if errGetCardFields := c.ShouldBindJSON(&CardFieldsToUpdate); errGetCardFields != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": errGetCardFields.Error()})
+	}
+
+	if err := repositories.UpdateCardRepository(cardId, CardFieldsToUpdate); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "card updated successfully"})
 }
