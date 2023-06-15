@@ -171,6 +171,31 @@ func UpdateCard(c *gin.Context) {
 		return
 	}
 
+	userToken := c.GetHeader("Authorization")
+	if userToken == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "user is not authorized"})
+		return
+	}
+
+	userId, errGetUserIdByToken := services.GetUserIdByToken(userToken)
+	if errGetUserIdByToken != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "error to get userId by authorization token"})
+		return
+	}
+
+	var user models.User
+
+	sqlRow, errGetUserById := repositories.GetUserByIDRepository(userId)
+	if errGetUserById != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errGetUserById.Error()})
+		return
+	}
+
+	if errScanUser := sqlRow.Scan(&user.ID, &user.Name, &user.Username, &user.Password); errScanUser != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errScanUser.Error()})
+		return
+	}
+
 	if _, errGetCardById := repositories.GetCardByIdRepository(cardId); errGetCardById != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": errGetCardById.Error()})
 		return
@@ -182,7 +207,7 @@ func UpdateCard(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": errGetCardFields.Error()})
 	}
 
-	if err := repositories.UpdateCardRepository(cardId, CardFieldsToUpdate); err != nil {
+	if err := repositories.UpdateCardRepository(cardId, CardFieldsToUpdate, user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}

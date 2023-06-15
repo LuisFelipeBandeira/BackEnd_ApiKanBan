@@ -8,10 +8,11 @@ import (
 )
 
 type User struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name" binding:"required,min=4,max=80"`
-	Username string `json:"user" binding:"required,min=2,max=30"`
-	Password string `json:"password" binding:"required,min=8"`
+	ID            int    `json:"id"`
+	Name          string `json:"name" binding:"required,min=4,max=80"`
+	Username      string `json:"user" binding:"required,min=2,max=30"`
+	Password      string `json:"password" binding:"required,min=8"`
+	AdmPermission int8   `json:"adm_permission" binding:"required"`
 }
 
 type UpdateUser struct {

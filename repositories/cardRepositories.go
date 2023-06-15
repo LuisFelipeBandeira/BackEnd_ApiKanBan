@@ -123,7 +123,7 @@ func FinishCardRepository(cardId int, user models.User) error {
 	return nil
 }
 
-func UpdateCardRepository(id int, cardFieldsToUpdate models.UpdateCard) error {
+func UpdateCardRepository(id int, cardFieldsToUpdate models.UpdateCard, user models.User) error {
 	db, errConnectDb := configuration.ConnectDb()
 	if errConnectDb != nil {
 		return errConnectDb
@@ -160,6 +160,10 @@ func UpdateCardRepository(id int, cardFieldsToUpdate models.UpdateCard) error {
 	}
 
 	if cardFieldsToUpdate.TicketOwner != "" {
+		if user.AdmPermission != 1 {
+			return errors.New("usuário não possui permisão ADM")
+		}
+
 		statement, errPrepare := db.Prepare("update Cards set TicketOwner = ? where id = ?")
 		if errPrepare != nil {
 			return errPrepare
