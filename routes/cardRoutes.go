@@ -12,4 +12,5 @@ func InitCardRoutes(r *gin.RouterGroup) {
 	r.POST("/cards", controllers.NewCard)
 	r.PUT("/cards/finish/:cardid", controllers.FinishCard)
 	r.PUT("/cards/:cardid", controllers.UpdateCard)
+	r.PUT("/cards/reopen/:cardid", controllers.ReopenCard)
 }

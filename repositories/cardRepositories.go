@@ -161,7 +161,7 @@ func UpdateCardRepository(id int, cardFieldsToUpdate models.UpdateCard, user mod
 
 	if cardFieldsToUpdate.TicketOwner != "" {
 		if user.AdmPermission != 1 {
-			return errors.New("usuário não possui permisão ADM")
+			return errors.New("usuário não possui permisão de ADM")
 		}
 
 		statement, errPrepare := db.Prepare("update Cards set TicketOwner = ? where id = ?")

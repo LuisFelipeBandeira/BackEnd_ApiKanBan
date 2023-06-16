@@ -214,3 +214,10 @@ func UpdateCard(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "card updated successfully"})
 }
+
+func ReopenCard(c *gin.Context) {
+	cardId, errConvertCardIdToInt := strconv.Atoi(c.Param("cardid"))
+	if errConvertCardIdToInt != nil {
+		c.JSON()
+	}
+}
