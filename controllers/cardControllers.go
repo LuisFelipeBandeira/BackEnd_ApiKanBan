@@ -218,6 +218,8 @@ func UpdateCard(c *gin.Context) {
 func ReopenCard(c *gin.Context) {
 	cardId, errConvertCardIdToInt := strconv.Atoi(c.Param("cardid"))
 	if errConvertCardIdToInt != nil {
-		c.JSON()
+		c.JSON(http.StatusBadRequest, gin.H{"message": "o cardid informado nao pode ser convertido para inteiro"})
+		return
 	}
+
 }
