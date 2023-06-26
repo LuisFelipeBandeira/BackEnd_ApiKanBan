@@ -179,3 +179,26 @@ func UpdateCardRepository(id int, cardFieldsToUpdate models.UpdateCard, user mod
 
 	return nil
 }
+
+func ReopenCardRepository(user models.User, cardToReopen models.Card) error {
+	db, errConnect := configuration.ConnectDb()
+	if errConnect != nil {
+		return errConnect
+	}
+
+	defer db.Close()
+
+	statement, errPrepare := db.Prepare("Update Cards SET FinishedAt = '', Finished = 0, FinishedBy = '', TicketOwner = ? WHERE Id = ?")
+	if errPrepare != nil {
+		return errPrepare
+	}
+
+	defer statement.Close()
+
+	_, errExec := statement.Exec(user.Username, cardToReopen.ID)
+	if errExec != nil {
+		return errExec
+	}
+
+	return nil
+}

@@ -171,11 +171,12 @@ func UpdateCard(c *gin.Context) {
 		return
 	}
 
-	userToken := c.GetHeader("Authorization")
-	if userToken == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "user is not authorized"})
+	header := c.GetHeader("Authorization")
+	if header == "" {
+		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
+	userToken := strings.Split(header, " ")[1]
 
 	userId, errGetUserIdByToken := services.GetUserIdByToken(userToken)
 	if errGetUserIdByToken != nil {
@@ -222,4 +223,50 @@ func ReopenCard(c *gin.Context) {
 		return
 	}
 
+	header := c.GetHeader("Authorization")
+	if header == "" {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	authToken := strings.Split(header, " ")[1]
+
+	userId, errGetUserId := services.GetUserIdByToken(authToken)
+	if errGetUserId != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "error to get userId by token"})
+		return
+	}
+
+	var user models.User
+
+	sqlRowUser, errGetUserById := repositories.GetUserByIDRepository(userId)
+	if errGetUserById != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": errGetUserById.Error()})
+		return
+	}
+
+	if errScanUser := sqlRowUser.Scan(&user.ID, &user.Name, &user.Username, &user.Password); errScanUser != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errScanUser.Error()})
+		return
+	}
+
+	var card models.Card
+
+	sqlRowCard, errGetCardById := repositories.GetCardByIdRepository(cardId)
+	if errGetCardById != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": errGetCardById.Error()})
+		return
+	}
+
+	if errScanCard := sqlRowCard.Scan(&card.ID, &card.Board, &card.Desc, &card.CreatedBy, &card.CreatedAt, &card.FinishedBy, &card.Finished, &card.FinishedAt); errScanCard != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errScanCard.Error()})
+		return
+	}
+
+	if err := repositories.ReopenCardRepository(user, card); err != nil {
+		c.JSON(500, gin.H{"message": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "card reaberto com sucesso"})
 }
