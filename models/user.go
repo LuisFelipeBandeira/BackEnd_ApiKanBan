@@ -5,12 +5,15 @@ import (
 	"encoding/hex"
 	"errors"
 	"strings"
+
+	"github.com/badoux/checkmail"
 )
 
 type User struct {
 	ID            int    `json:"id"`
 	Name          string `json:"name" binding:"required,min=4,max=80"`
 	Username      string `json:"user" binding:"required,min=2,max=30"`
+	Email         string `json:"email"`
 	Password      string `json:"password" binding:"required,min=8"`
 	AdmPermission int8   `json:"adm_permission" binding:"required"`
 }
@@ -50,16 +53,22 @@ func (user *LoginUser) EncriptPassword() {
 func (user *User) ValidAndFormat() error {
 	switch {
 	case user.Name == "":
-		return errors.New("o nome do usuario nao pode ser vazio")
+		return errors.New("the user's name can not be empty")
 	case user.Username == "":
-		return errors.New("o username do usuario nao pode ser vazio")
+		return errors.New("the username can not be empty")
 	case user.Password == "":
-		return errors.New("a senha do usuario nao pode ser vazia")
+		return errors.New("the user's password can not be empty")
+	case user.Email == "":
+		return errors.New("the user's email can not be empty")
 	default:
-		user.Name = strings.TrimSpace(user.Name)
-		user.Name = strings.ToLower(user.Name)
-		user.Username = strings.TrimSpace(user.Username)
-		user.Username = strings.ToLower(user.Username)
+		user.Name = strings.ToLower(strings.TrimSpace(user.Name))
+		user.Username = (strings.TrimSpace(user.Username))
+		user.Email = (strings.TrimSpace(user.Email))
+
+		if errEmailFormat := checkmail.ValidateFormat(user.Email); errEmailFormat != nil {
+			return errors.New("the email format is invalid")
+		}
+
 		return nil
 	}
 }

@@ -25,7 +25,7 @@ func GetUsers(c *gin.Context) {
 	for result.Next() {
 		var user models.User
 
-		if errScan := result.Scan(&user.ID, &user.Name, &user.Username, &user.Password, &user.AdmPermission); errScan != nil {
+		if errScan := result.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Password, &user.AdmPermission); errScan != nil {
 			messageError := errScan.Error()
 			c.JSON(http.StatusInternalServerError, gin.H{"message": messageError})
 			return
@@ -83,7 +83,7 @@ func GetUserByID(c *gin.Context) {
 		return
 	}
 
-	if errScan := sqlRow.Scan(&user.ID, &user.Name, &user.Username, &user.Password, &user.AdmPermission); errScan != nil {
+	if errScan := sqlRow.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Password, &user.AdmPermission); errScan != nil {
 		messageError := errScan.Error()
 		c.JSON(http.StatusInternalServerError, gin.H{"message": messageError})
 		return

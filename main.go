@@ -9,7 +9,8 @@ import (
 )
 
 func main() {
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.Recovery())
 	router.Use(middlewares.Auth())
 
 	routes.InitCardRoutes(&router.RouterGroup)

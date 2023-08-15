@@ -60,14 +60,14 @@ func NewUserRepository(user *models.User) (sql.Result, error) {
 		return nil, errors.New("username ja cadastrado em nosso banco de dados")
 	}
 
-	statement, errPrepare := db.Prepare("insert into users (name, username, password) values (?, ?, ?);")
+	statement, errPrepare := db.Prepare("insert into users (name, username, email, password, isAdm) values (?, ?, ?, ?, ?);")
 	if errPrepare != nil {
 		return nil, errPrepare
 	}
 
 	defer statement.Close()
 
-	result, errExec := statement.Exec(user.Name, user.Username, user.Password)
+	result, errExec := statement.Exec(user.Name, user.Username, user.Email, user.Password, user.AdmPermission)
 	if errExec != nil {
 		return nil, errExec
 	}
