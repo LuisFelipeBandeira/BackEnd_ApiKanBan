@@ -26,7 +26,7 @@ func GetCards(c *gin.Context) {
 	for sqlRows.Next() {
 		var card *models.Card
 
-		if errScan := sqlRows.Scan(&card.ID, &card.Board, &card.Desc, &card.CreatedBy, &card.CreatedAt, &card.FinishedBy, &card.Finished, &card.FinishedAt); errScan != nil {
+		if errScan := sqlRows.Scan(&card.ID, &card.BoardId, &card.CreatedBy, &card.CreatedAt, &card.FinishedBy, &card.Finished, &card.FinishedAt); errScan != nil {
 			c.JSON(500, gin.H{"message": errScan.Error()})
 			return
 		}
@@ -53,7 +53,7 @@ func GetCardById(c *gin.Context) {
 
 	var card *models.Card
 
-	if errScan := sqlRow.Scan(&card.ID, &card.Board, &card.Desc, &card.CreatedBy, &card.CreatedAt, &card.FinishedBy, &card.Finished, &card.FinishedAt); errScan != nil {
+	if errScan := sqlRow.Scan(&card.ID, &card.BoardId, &card.CreatedBy, &card.CreatedAt, &card.FinishedBy, &card.Finished, &card.FinishedAt); errScan != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": errScan.Error()})
 		return
 	}
@@ -89,13 +89,7 @@ func NewCard(c *gin.Context) {
 		return
 	}
 
-	header := c.GetHeader("Authorization")
-	if header == "" {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-
-	token := strings.Split(header, " ")[1]
+	token := strings.Split(c.GetHeader("Authorization"), " ")[1]
 
 	userId, errGetUserId := services.GetUserIdByToken(token)
 	if errGetUserId != nil {
@@ -103,20 +97,13 @@ func NewCard(c *gin.Context) {
 		return
 	}
 
-	sqlRow, errGetUserLogged := repositories.GetUserByIDRepository(userId)
+	user, errGetUserLogged := repositories.GetUserByIDRepository(userId)
 	if errGetUserLogged != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": errGetUserLogged.Error()})
 		return
 	}
 
-	var user models.User
-
-	if errScan := sqlRow.Scan(&user.ID, &user.Name, &user.Username, &user.Password); errScan != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": errScan.Error()})
-		return
-	}
-
-	card.CreatedBy = user.Username
+	card.CreatedBy = uint(user.ID)
 
 	card.CreatedAt = time.Now()
 
@@ -258,7 +245,7 @@ func ReopenCard(c *gin.Context) {
 		return
 	}
 
-	if errScanCard := sqlRowCard.Scan(&card.ID, &card.Board, &card.Desc, &card.CreatedBy, &card.CreatedAt, &card.FinishedBy, &card.Finished, &card.FinishedAt); errScanCard != nil {
+	if errScanCard := sqlRowCard.Scan(&card.ID, &card.BoardId, &card.CreatedBy, &card.CreatedAt, &card.FinishedBy, &card.Finished, &card.FinishedAt); errScanCard != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": errScanCard.Error()})
 		return
 	}
@@ -268,5 +255,5 @@ func ReopenCard(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "card reaberto com sucesso"})
+	c.JSON(200, gin.H{"message": "card reopened successfully"})
 }

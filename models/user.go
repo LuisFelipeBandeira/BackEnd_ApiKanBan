@@ -5,27 +5,31 @@ import (
 	"encoding/hex"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/badoux/checkmail"
 )
 
 type User struct {
 	ID            int    `json:"id"`
-	Name          string `json:"name" binding:"required,min=4,max=80"`
-	Username      string `json:"user" binding:"required,min=2,max=30"`
+	Name          string `json:"name" binding:"required,min=4,max=100"`
+	Username      string `json:"user" binding:"required,min=2,max=80"`
 	Email         string `json:"email"`
-	Password      string `json:"password" binding:"required,min=8"`
+	Password      string `json:"password" binding:"required,min=6, max=100"`
 	AdmPermission int8   `json:"adm_permission" binding:"required"`
+	CreatedAt     time.Time
 }
 
 type UpdateUser struct {
-	Name     string `json:"name"`
-	Username string `json:"user"`
-	Password string `json:"password"`
+	Name          string `json:"name"`
+	Username      string `json:"user"`
+	Password      string `json:"password"`
+	Email         string `json:"email"`
+	AdmPermission int8   `json:"adm_permission"`
 }
 
 type LoginUser struct {
-	Username string `json:"user" binding:"required"`
+	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 

@@ -9,7 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func GetUsersRepository() (*sql.Rows, error) {
+func GetUsersRepository() ([]models.User, error) {
 	db, errConnectDb := configuration.ConnectDb()
 	if errConnectDb != nil {
 		return nil, errConnectDb
@@ -22,30 +22,48 @@ func GetUsersRepository() (*sql.Rows, error) {
 		return nil, errSelect
 	}
 
-	return result, nil
+	defer result.Close()
+
+	var users []models.User
+
+	for result.Next() {
+		var user models.User
+
+		if errScan := result.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Password, &user.AdmPermission, &user.CreatedAt); errScan != nil {
+			return []models.User{}, errScan
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
 }
 
-func GetUserByIDRepository(id int) (*sql.Row, error) {
+func GetUserByIDRepository(id int) (models.User, error) {
 	db, errConnectDb := configuration.ConnectDb()
 	if errConnectDb != nil {
-		return nil, errConnectDb
+		return models.User{}, errConnectDb
 	}
 
 	defer db.Close()
 
 	var count int
 
-	db.QueryRow("SELECT COUNT(*) FROM Users WHERE id = ?", id).Scan(&count)
+	db.QueryRow("SELECT COUNT(*) FROM users WHERE id = ?", id).Scan(&count)
 	if count < 1 {
-		return nil, errors.New("nenhum usuario encontrado com o ID informado")
+		return models.User{}, errors.New("nenhum usuario encontrado com o ID informado")
 	}
 
-	sqlRow := db.QueryRow("select * from users where id = ?", id)
+	var user models.User
 
-	return sqlRow, nil
+	if errScan := db.QueryRow("select * from users where id = ?", id).Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Password, &user.AdmPermission, &user.CreatedAt); errScan != nil {
+		return models.User{}, errScan
+	}
+
+	return user, nil
 }
 
-func NewUserRepository(user *models.User) (sql.Result, error) {
+func NewUserRepository(user models.User) (sql.Result, error) {
 	db, errConnectDb := configuration.ConnectDb()
 	if errConnectDb != nil {
 		return nil, errConnectDb
@@ -55,19 +73,19 @@ func NewUserRepository(user *models.User) (sql.Result, error) {
 
 	var count int
 
-	db.QueryRow("SELECT COUNT(*) FROM Users WHERE username = ?", user.Username).Scan(&count)
+	db.QueryRow("SELECT COUNT(*) FROM users WHERE username = ? OR email = ?", user.Username, user.Email).Scan(&count)
 	if count >= 1 {
-		return nil, errors.New("username ja cadastrado em nosso banco de dados")
+		return nil, errors.New("username e(ou) email ja cadastrado em nosso banco de dados")
 	}
 
-	statement, errPrepare := db.Prepare("insert into users (name, username, email, password, isAdm) values (?, ?, ?, ?, ?);")
+	statement, errPrepare := db.Prepare("insert into users (name, username, email, password, isAdm, created_at) values (?, ?, ?, ?, ?, ?);")
 	if errPrepare != nil {
 		return nil, errPrepare
 	}
 
 	defer statement.Close()
 
-	result, errExec := statement.Exec(user.Name, user.Username, user.Email, user.Password, user.AdmPermission)
+	result, errExec := statement.Exec(user.Name, user.Username, user.Email, user.Password, user.AdmPermission, user.CreatedAt)
 	if errExec != nil {
 		return nil, errExec
 	}
@@ -115,13 +133,13 @@ func UpdateUserRepository(id int, user models.UpdateUser) error {
 
 	var countResult int
 
-	db.QueryRow("SELECT Count(*) FROM Users WHERE Id = ?", id).Scan(&countResult)
+	db.QueryRow("SELECT Count(*) FROM users WHERE Id = ?", id).Scan(&countResult)
 	if countResult < 1 {
 		return errors.New("usuario nao encontrato")
 	}
 
 	if user.Name != "" {
-		statement, errPrepare := db.Prepare("update Users set name = ? where id = ?")
+		statement, errPrepare := db.Prepare("update users set name = ? where id = ?")
 		if errPrepare != nil {
 			return errPrepare
 		}
@@ -135,7 +153,7 @@ func UpdateUserRepository(id int, user models.UpdateUser) error {
 	}
 
 	if user.Password != "" {
-		statement, errPrepare := db.Prepare("update Users set password = ? where id = ?")
+		statement, errPrepare := db.Prepare("update users set password = ? where id = ?")
 		if errPrepare != nil {
 			return errPrepare
 		}
@@ -151,7 +169,7 @@ func UpdateUserRepository(id int, user models.UpdateUser) error {
 	}
 
 	if user.Username != "" {
-		statement, errPrepare := db.Prepare("update Users set username = ? where id = ?")
+		statement, errPrepare := db.Prepare("update users set username = ? where id = ?")
 		if errPrepare != nil {
 			return errPrepare
 		}
@@ -159,6 +177,20 @@ func UpdateUserRepository(id int, user models.UpdateUser) error {
 		defer statement.Close()
 
 		_, errExec := statement.Exec(user.Username, id)
+		if errExec != nil {
+			return errExec
+		}
+	}
+
+	if user.Email != "" {
+		statement, errPrepare := db.Prepare("update users set email = ? where id = ?")
+		if errPrepare != nil {
+			return errPrepare
+		}
+
+		defer statement.Close()
+
+		_, errExec := statement.Exec(user.Email, id)
 		if errExec != nil {
 			return errExec
 		}
@@ -175,16 +207,18 @@ func LoginRepository(userLogin models.LoginUser) (int, error) {
 
 	var resultCount int
 
-	db.QueryRow("select Count(*) from Users where username = ?", userLogin.Username).Scan(&resultCount)
+	db.QueryRow("select Count(*) from users where email = ?", userLogin.Email).Scan(&resultCount)
 
 	if resultCount < 1 {
 		return 0, errors.New("nenhum usuario encontrado com o username informado")
 	}
 
-	var passwordDb string
-	var userId int
+	var (
+		passwordDb string
+		userId     int
+	)
 
-	db.QueryRow("select id, password from Users where username = ?", userLogin.Username).Scan(&userId, &passwordDb)
+	db.QueryRow("select id, password from users where email = ?", userLogin.Email).Scan(&userId, &passwordDb)
 
 	userLogin.EncriptPassword()
 
@@ -193,4 +227,25 @@ func LoginRepository(userLogin models.LoginUser) (int, error) {
 	}
 
 	return userId, nil
+}
+
+func UserIsAdm(userId int) (bool, error) {
+	db, errToConnectDb := configuration.ConnectDb()
+	if errToConnectDb != nil {
+		return false, errToConnectDb
+	}
+
+	defer db.Close()
+
+	var fieldUserIsAdm int
+
+	if errScan := db.QueryRow("select isAdm from users where id = ?", userId).Scan(&fieldUserIsAdm); errScan != nil {
+		return false, errScan
+	}
+
+	if fieldUserIsAdm == 1 {
+		return true, nil
+	}
+
+	return false, nil
 }

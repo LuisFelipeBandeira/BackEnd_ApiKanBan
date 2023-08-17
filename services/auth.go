@@ -38,7 +38,7 @@ func ValidateToken(t string) error {
 		return nil
 	}
 
-	return errors.New("invalid token!")
+	return errors.New("invalid token")
 }
 
 func ReturnSecretKey(t *jwt.Token) (interface{}, error) {
@@ -71,5 +71,5 @@ func GetUserIdByToken(t string) (int, error) {
 		return int(userId), nil
 	}
 
-	return 0, errors.New("Error to get token userId")
+	return 0, errors.New("error to get userId by token")
 }

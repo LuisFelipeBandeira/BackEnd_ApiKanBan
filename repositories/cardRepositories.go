@@ -85,14 +85,14 @@ func NewCardRepository(card models.Card) (models.Card, error) {
 
 	defer db.Close()
 
-	statement, errPrepare := db.Prepare("INSERT INTO Cards(Pipeline, Description, CreatedBy, CreatedAt) VALUES (?, ?, ?, ?)")
+	statement, errPrepare := db.Prepare("INSERT INTO Cards(Pipeline, CreatedBy, CreatedAt) VALUES (?, ?, ?, ?)")
 	if errPrepare != nil {
 		return models.Card{}, errPrepare
 	}
 
 	defer statement.Close()
 
-	_, errExec := statement.Exec(card.Board, card.Desc, card.CreatedBy, card.CreatedAt)
+	_, errExec := statement.Exec(card.BoardId, card.CreatedBy, card.CreatedAt)
 	if errExec != nil {
 		return models.Card{}, errExec
 	}
@@ -131,7 +131,7 @@ func UpdateCardRepository(id int, cardFieldsToUpdate models.UpdateCard, user mod
 
 	defer db.Close()
 
-	if cardFieldsToUpdate.Board != "" {
+	if cardFieldsToUpdate.BoardId != 0 {
 		statement, errPrepare := db.Prepare("update Cards set Pipeline = ? where id = ?")
 		if errPrepare != nil {
 			return errPrepare
@@ -139,7 +139,7 @@ func UpdateCardRepository(id int, cardFieldsToUpdate models.UpdateCard, user mod
 
 		defer statement.Close()
 
-		_, errExec := statement.Exec(cardFieldsToUpdate.Board, id)
+		_, errExec := statement.Exec(cardFieldsToUpdate.BoardId, id)
 		if errExec != nil {
 			return errExec
 		}
@@ -159,7 +159,7 @@ func UpdateCardRepository(id int, cardFieldsToUpdate models.UpdateCard, user mod
 		}
 	}
 
-	if cardFieldsToUpdate.TicketOwner != "" {
+	if cardFieldsToUpdate.TicketOwnerId != 0 {
 		if user.AdmPermission != 1 {
 			return errors.New("usuário não possui permisão de ADM")
 		}
@@ -171,7 +171,7 @@ func UpdateCardRepository(id int, cardFieldsToUpdate models.UpdateCard, user mod
 
 		defer statement.Close()
 
-		_, errExec := statement.Exec(cardFieldsToUpdate.TicketOwner, id)
+		_, errExec := statement.Exec(cardFieldsToUpdate.TicketOwnerId, id)
 		if errExec != nil {
 			return errExec
 		}
@@ -188,7 +188,7 @@ func ReopenCardRepository(user models.User, cardToReopen models.Card) error {
 
 	defer db.Close()
 
-	statement, errPrepare := db.Prepare("Update Cards SET FinishedAt = '', Finished = 0, FinishedBy = '', TicketOwner = ? WHERE Id = ?")
+	statement, errPrepare := db.Prepare("Update Cards SET FinishedAt = '', Finished = 0, FinishedBy = '', TicketOwnerid = ? WHERE Id = ?")
 	if errPrepare != nil {
 		return errPrepare
 	}

@@ -3,6 +3,8 @@ package controllers
 import (
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/LuisFelipeBandeira/BackEnd_ApiKanBan/models"
 	"github.com/LuisFelipeBandeira/BackEnd_ApiKanBan/repositories"
@@ -11,34 +13,37 @@ import (
 )
 
 func GetUsers(c *gin.Context) {
-	result, err := repositories.GetUsersRepository()
+	users, err := repositories.GetUsersRepository()
 	if err != nil {
 		messageError := err.Error()
 		c.JSON(http.StatusInternalServerError, gin.H{"message": messageError})
 		return
 	}
 
-	defer result.Close()
-
-	var users []models.User
-
-	for result.Next() {
-		var user models.User
-
-		if errScan := result.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Password, &user.AdmPermission); errScan != nil {
-			messageError := errScan.Error()
-			c.JSON(http.StatusInternalServerError, gin.H{"message": messageError})
-			return
-		}
-
-		users = append(users, user)
-	}
-
 	c.JSON(200, users)
 }
 
 func NewUser(c *gin.Context) {
-	var user *models.User
+	var user models.User
+
+	token := strings.Split(c.GetHeader("Authorization"), " ")[1]
+
+	userIdToken, errToGetIdByToken := services.GetUserIdByToken(token)
+	if errToGetIdByToken != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errToGetIdByToken})
+		return
+	}
+
+	isAdm, errUserIsAdm := repositories.UserIsAdm(userIdToken)
+	if errUserIsAdm != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errUserIsAdm})
+		return
+	}
+
+	if !isAdm {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "usuario nao possui permissao de adm"})
+		return
+	}
 
 	if errBody := c.ShouldBindJSON(&user); errBody != nil {
 		messageError := errBody.Error()
@@ -47,6 +52,8 @@ func NewUser(c *gin.Context) {
 	}
 
 	user.EncriptPassword()
+
+	user.CreatedAt = time.Now().Add(-time.Hour * 3)
 
 	result, err := repositories.NewUserRepository(user)
 	if err != nil {
@@ -76,15 +83,9 @@ func GetUserByID(c *gin.Context) {
 
 	var user models.User
 
-	sqlRow, err := repositories.GetUserByIDRepository(userId)
+	user, err := repositories.GetUserByIDRepository(userId)
 	if err != nil {
 		messageError := err.Error()
-		c.JSON(http.StatusInternalServerError, gin.H{"message": messageError})
-		return
-	}
-
-	if errScan := sqlRow.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Password, &user.AdmPermission); errScan != nil {
-		messageError := errScan.Error()
 		c.JSON(http.StatusInternalServerError, gin.H{"message": messageError})
 		return
 	}
@@ -95,6 +96,25 @@ func GetUserByID(c *gin.Context) {
 }
 
 func DeleteUser(c *gin.Context) {
+
+	token := strings.Split(c.GetHeader("Authorization"), " ")[1]
+
+	userIdToken, errToGetIdByToken := services.GetUserIdByToken(token)
+	if errToGetIdByToken != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errToGetIdByToken})
+		return
+	}
+
+	isAdm, errUserIsAdm := repositories.UserIsAdm(userIdToken)
+	if errUserIsAdm != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errUserIsAdm})
+		return
+	}
+
+	if !isAdm {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "usuario nao possui permissao de adm"})
+		return
+	}
 
 	userId, errConvert := strconv.Atoi(c.Param("userid"))
 	if errConvert != nil {
@@ -123,6 +143,26 @@ func DeleteUser(c *gin.Context) {
 }
 
 func UpdateUser(c *gin.Context) {
+
+	token := strings.Split(c.GetHeader("Authorization"), " ")[1]
+
+	userIdToken, errToGetIdByToken := services.GetUserIdByToken(token)
+	if errToGetIdByToken != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errToGetIdByToken})
+		return
+	}
+
+	isAdm, errUserIsAdm := repositories.UserIsAdm(userIdToken)
+	if errUserIsAdm != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errUserIsAdm})
+		return
+	}
+
+	if !isAdm {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "usuario nao possui permissao de adm"})
+		return
+	}
+
 	userId, errToConvert := strconv.Atoi(c.Param("userid"))
 	if errToConvert != nil {
 		messageError := errToConvert.Error()
@@ -130,15 +170,15 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	var user models.UpdateUser
+	var userToUpdate models.UpdateUser
 
-	if errToGetBody := c.ShouldBindJSON(&user); errToGetBody != nil {
+	if errToGetBody := c.ShouldBindJSON(&userToUpdate); errToGetBody != nil {
 		messageError := errToGetBody.Error()
 		c.JSON(http.StatusBadRequest, gin.H{"message": messageError})
 		return
 	}
 
-	if err := repositories.UpdateUserRepository(userId, user); err != nil {
+	if err := repositories.UpdateUserRepository(userId, userToUpdate); err != nil {
 		messageError := err.Error()
 		c.JSON(http.StatusBadRequest, gin.H{"message": messageError})
 		return
@@ -167,5 +207,5 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "User loged", "token": token})
+	c.JSON(200, gin.H{"message": "User loged ", "token": token})
 }
