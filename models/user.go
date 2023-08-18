@@ -14,7 +14,7 @@ type User struct {
 	ID            int    `json:"id"`
 	Name          string `json:"name" binding:"required,min=4,max=100"`
 	Username      string `json:"user" binding:"required,min=2,max=80"`
-	Email         string `json:"email"`
+	Email         string `json:"email" binding:"required"`
 	Password      string `json:"password" binding:"required,min=6, max=100"`
 	AdmPermission int8   `json:"adm_permission" binding:"required"`
 	CreatedAt     time.Time

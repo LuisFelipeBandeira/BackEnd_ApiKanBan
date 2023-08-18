@@ -13,25 +13,10 @@ import (
 )
 
 func GetCards(c *gin.Context) {
-	sqlRows, err := repositories.GetCardsRepository()
+	cards, err := repositories.GetCardsRepository()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
-	}
-
-	defer sqlRows.Close()
-
-	var cards []models.Card
-
-	for sqlRows.Next() {
-		var card *models.Card
-
-		if errScan := sqlRows.Scan(&card.ID, &card.BoardId, &card.CreatedBy, &card.CreatedAt, &card.FinishedBy, &card.Finished, &card.FinishedAt); errScan != nil {
-			c.JSON(500, gin.H{"message": errScan.Error()})
-			return
-		}
-
-		cards = append(cards, *card)
 	}
 
 	c.JSON(200, cards)
@@ -41,20 +26,13 @@ func GetCardById(c *gin.Context) {
 
 	cardId, errConvert := strconv.Atoi(c.Param("cardid"))
 	if errConvert != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "cardid enviado não pode ser convertido para int"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "error converting given id"})
 		return
 	}
 
-	sqlRow, err := repositories.GetCardByIdRepository(cardId)
+	card, err := repositories.GetCardByIdRepository(cardId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-		return
-	}
-
-	var card *models.Card
-
-	if errScan := sqlRow.Scan(&card.ID, &card.BoardId, &card.CreatedBy, &card.CreatedAt, &card.FinishedBy, &card.Finished, &card.FinishedAt); errScan != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": errScan.Error()})
 		return
 	}
 
@@ -80,7 +58,7 @@ func NewCard(c *gin.Context) {
 	var card models.Card
 
 	if errGetUser := c.ShouldBindJSON(&card); errGetUser != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Card submitted is invalid"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "card submitted is invalid"})
 		return
 	}
 
@@ -97,29 +75,23 @@ func NewCard(c *gin.Context) {
 		return
 	}
 
-	user, errGetUserLogged := repositories.GetUserByIDRepository(userId)
-	if errGetUserLogged != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": errGetUserLogged.Error()})
-		return
-	}
+	card.CreatedBy = uint(userId)
 
-	card.CreatedBy = uint(user.ID)
+	card.CreatedAt = time.Now().Add(-time.Hour * 3)
 
-	card.CreatedAt = time.Now()
-
-	cardCadastrado, err := repositories.NewCardRepository(card)
+	err := repositories.NewCardRepository(card)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
 
-	c.JSON(200, cardCadastrado)
+	c.JSON(200, gin.H{"message": "user created successfully"})
 }
 
 func FinishCard(c *gin.Context) {
 	cardId, errConvert := strconv.Atoi(c.Param("cardid"))
 	if errConvert != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "cardid enviado não pode ser convertido para int"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "error converting given id"})
 		return
 	}
 
@@ -131,21 +103,15 @@ func FinishCard(c *gin.Context) {
 		return
 	}
 
-	var user models.User
-
-	sqlRow, errGetUser := repositories.GetUserByIDRepository(userId)
+	user, errGetUser := repositories.GetUserByIDRepository(userId)
 	if errGetUser != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": errGetUser.Error()})
 		return
 	}
 
-	if errScan := sqlRow.Scan(&user.ID, &user.Name, &user.Username, &user.Password); errScan != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": errScan.Error()})
-		return
-	}
-
-	if err := repositories.FinishCardRepository(cardId, user); err != nil {
+	if err := repositories.FinishCardRepository(cardId, user, time.Now().Add(-time.Hour*3)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
 	}
 
 	c.JSON(200, gin.H{"message": "the card was finished sucessfully"})
@@ -154,38 +120,21 @@ func FinishCard(c *gin.Context) {
 func UpdateCard(c *gin.Context) {
 	cardId, errConvert := strconv.Atoi(c.Param("cardid"))
 	if errConvert != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "cardid enviado não pode ser convertido para int"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "error converting given id"})
 		return
 	}
 
-	header := c.GetHeader("Authorization")
-	if header == "" {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-	userToken := strings.Split(header, " ")[1]
+	userToken := strings.Split(c.GetHeader("Authorization"), " ")[1]
 
 	userId, errGetUserIdByToken := services.GetUserIdByToken(userToken)
 	if errGetUserIdByToken != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "error to get userId by authorization token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": errGetUserIdByToken.Error()})
 		return
 	}
 
-	var user models.User
-
-	sqlRow, errGetUserById := repositories.GetUserByIDRepository(userId)
+	user, errGetUserById := repositories.GetUserByIDRepository(userId)
 	if errGetUserById != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": errGetUserById.Error()})
-		return
-	}
-
-	if errScanUser := sqlRow.Scan(&user.ID, &user.Name, &user.Username, &user.Password); errScanUser != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": errScanUser.Error()})
-		return
-	}
-
-	if _, errGetCardById := repositories.GetCardByIdRepository(cardId); errGetCardById != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": errGetCardById.Error()})
 		return
 	}
 
@@ -193,6 +142,7 @@ func UpdateCard(c *gin.Context) {
 
 	if errGetCardFields := c.ShouldBindJSON(&CardFieldsToUpdate); errGetCardFields != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": errGetCardFields.Error()})
+		return
 	}
 
 	if err := repositories.UpdateCardRepository(cardId, CardFieldsToUpdate, user); err != nil {
@@ -200,60 +150,5 @@ func UpdateCard(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "card updated successfully"})
-}
-
-func ReopenCard(c *gin.Context) {
-	cardId, errConvertCardIdToInt := strconv.Atoi(c.Param("cardid"))
-	if errConvertCardIdToInt != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "o cardid informado nao pode ser convertido para inteiro"})
-		return
-	}
-
-	header := c.GetHeader("Authorization")
-	if header == "" {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-
-	authToken := strings.Split(header, " ")[1]
-
-	userId, errGetUserId := services.GetUserIdByToken(authToken)
-	if errGetUserId != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "error to get userId by token"})
-		return
-	}
-
-	var user models.User
-
-	sqlRowUser, errGetUserById := repositories.GetUserByIDRepository(userId)
-	if errGetUserById != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": errGetUserById.Error()})
-		return
-	}
-
-	if errScanUser := sqlRowUser.Scan(&user.ID, &user.Name, &user.Username, &user.Password); errScanUser != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": errScanUser.Error()})
-		return
-	}
-
-	var card models.Card
-
-	sqlRowCard, errGetCardById := repositories.GetCardByIdRepository(cardId)
-	if errGetCardById != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": errGetCardById.Error()})
-		return
-	}
-
-	if errScanCard := sqlRowCard.Scan(&card.ID, &card.BoardId, &card.CreatedBy, &card.CreatedAt, &card.FinishedBy, &card.Finished, &card.FinishedAt); errScanCard != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": errScanCard.Error()})
-		return
-	}
-
-	if err := repositories.ReopenCardRepository(user, card); err != nil {
-		c.JSON(500, gin.H{"message": err.Error()})
-		return
-	}
-
-	c.JSON(200, gin.H{"message": "card reopened successfully"})
+	c.JSON(200, gin.H{"message": "card updated successfully"})
 }
