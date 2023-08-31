@@ -3,6 +3,7 @@ package repositories
 import (
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/LuisFelipeBandeira/BackEnd_ApiKanBan/configuration"
 	"github.com/LuisFelipeBandeira/BackEnd_ApiKanBan/models"
@@ -27,10 +28,18 @@ func GetUsersRepository() ([]models.User, error) {
 	var users []models.User
 
 	for result.Next() {
-		var user models.User
-
-		if errScan := result.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Password, &user.AdmPermission, &user.CreatedAt); errScan != nil {
+		var (
+			user         models.User
+			createdAtRaw []byte
+			errParseTime error
+		)
+		if errScan := result.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Password, &user.AdmPermission, &createdAtRaw); errScan != nil {
 			return []models.User{}, errScan
+		}
+
+		user.CreatedAt, errParseTime = time.Parse("2006-01-02 15:04:05", string(createdAtRaw))
+		if errParseTime != nil {
+			return []models.User{}, errParseTime
 		}
 
 		users = append(users, user)
@@ -54,10 +63,19 @@ func GetUserByIDRepository(id int) (models.User, error) {
 		return models.User{}, errors.New("nenhum usuario encontrado com o ID informado")
 	}
 
-	var user models.User
+	var (
+		user         models.User
+		createdAtRaw []byte
+		errParseTime error
+	)
 
-	if errScan := db.QueryRow("select * from users where id = ?", id).Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Password, &user.AdmPermission, &user.CreatedAt); errScan != nil {
+	if errScan := db.QueryRow("select * from users where id = ?", id).Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Password, &user.AdmPermission, &createdAtRaw); errScan != nil {
 		return models.User{}, errScan
+	}
+
+	user.CreatedAt, errParseTime = time.Parse("2006-01-02 15:04:05", string(createdAtRaw))
+	if errParseTime != nil {
+		return models.User{}, errParseTime
 	}
 
 	return user, nil
@@ -210,7 +228,7 @@ func LoginRepository(userLogin models.LoginUser) (int, error) {
 	db.QueryRow("select Count(*) from users where email = ?", userLogin.Email).Scan(&resultCount)
 
 	if resultCount < 1 {
-		return 0, errors.New("nenhum usuario encontrado com o username informado")
+		return 0, errors.New("nenhum usuario encontrado com o email informado")
 	}
 
 	var (

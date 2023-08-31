@@ -27,11 +27,21 @@ func GetCardsRepository() ([]models.Card, error) {
 	var cards []models.Card
 
 	for rows.Next() {
-		var card *models.Card
 
-		if errScan := rows.Scan(&card.ID, &card.Title, &card.Desc, &card.BoardId, &card.ColumnId, &card.CreatedBy, &card.CreatedAt,
+		var (
+			card         *models.Card
+			createdAtRaw []byte
+			errParseTime error
+		)
+
+		if errScan := rows.Scan(&card.ID, &card.Title, &card.Desc, &card.BoardId, &card.ColumnId, &card.CreatedBy, &createdAtRaw,
 			&card.TicketOwnerId, &card.FinishedBy, &card.Finished, &card.FinishedAt); errScan != nil {
 			return nil, errScan
+		}
+
+		card.CreatedAt, errParseTime = time.Parse("2006-01-02 15:04:05", string(createdAtRaw))
+		if errParseTime != nil {
+			return []models.Card{}, errParseTime
 		}
 
 		cards = append(cards, *card)
@@ -56,11 +66,20 @@ func GetCardByIdRepository(id int) (models.Card, error) {
 		return models.Card{}, errors.New("card not found")
 	}
 
-	var card models.Card
+	var (
+		card                models.Card
+		createdAtRaw        []byte
+		errToParseCreatedAt error
+	)
 
-	if errScan := db.QueryRow("select * from cards where id = ?", id).Scan(&card.ID, &card.Title, &card.Desc, &card.BoardId, &card.ColumnId, &card.CreatedBy, &card.CreatedAt,
+	if errScan := db.QueryRow("select * from cards where id = ?", id).Scan(&card.ID, &card.Title, &card.Desc, &card.BoardId, &card.ColumnId, &card.CreatedBy, &createdAtRaw,
 		&card.TicketOwnerId, &card.FinishedBy, &card.Finished, &card.FinishedAt); errScan != nil {
 		return models.Card{}, errScan
+	}
+
+	card.CreatedAt, errToParseCreatedAt = time.Parse("2006-01-02 15:04:05", string(createdAtRaw))
+	if errToParseCreatedAt != nil {
+		return models.Card{}, errToParseCreatedAt
 	}
 
 	return card, nil

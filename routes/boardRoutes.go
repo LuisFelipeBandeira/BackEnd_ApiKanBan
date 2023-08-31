@@ -7,4 +7,5 @@ import (
 
 func InitBoardRoutes(r *gin.RouterGroup) {
 	r.GET("/boards", controllers.GetAllBoards)
+	r.GET("/board/:boardid", controllers.GetBoardById)
 }
